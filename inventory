@@ -1,0 +1,15 @@
+[MariaDB]
+10.33.41.189 node_name="MySQL-189"
+10.33.41.190 node_name="MySQL-190"
+10.33.41.191 node_name="MySQL-191"
+
+[MariaDB:vars]
+all_nodes="10.33.41.189,10.33.41.190,10.33.41.191"
+
+[MariaDBMain]
+10.33.41.189
+
+[MariaDBAls]
+10.33.41.190
+10.33.41.191
+

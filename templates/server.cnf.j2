@@ -1,0 +1,24 @@
+[galera]
+# Mandatory settings
+wsrep_on=ON
+wsrep_provider=/usr/lib64/galera/libgalera_smm.so
+
+#add your node ips here
+wsrep_cluster_address="gcomm://{{ all_nodes }}"
+binlog_format=row
+default_storage_engine=InnoDB
+innodb_autoinc_lock_mode=2
+
+#Cluster name
+wsrep_cluster_name="galera_blya"
+
+# Allow server to accept connections on all interfaces.
+bind-address=0.0.0.0
+
+# this server ip, change for each server
+wsrep_node_address="{{ ansible_host }}"
+
+# this server name, change for each server
+wsrep_node_name="{{ node_name }}"
+
+wsrep_sst_method=rsync
