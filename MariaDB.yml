@@ -175,7 +175,6 @@
   tasks:
     - name: MariaDB | Make this node Main
       command: "sed -i 's/^safe_to_bootstrap: 0/safe_to_bootstrap: 1/g' /var/lib/mysql/grastate.dat"
-
     - name: MariaDB | Start cluster on 1-st node
       command: "galera_new_cluster"
 
