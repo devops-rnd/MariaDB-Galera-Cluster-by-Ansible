@@ -1,0 +1,187 @@
+---
+#autor: Radchenko Vitalii (vitaliy.michailovich@gmail.com)
+- hosts: MariaDB
+
+  vars:
+    mariadb_root_password: 111
+    mariadb_new_username: vitalii
+    mariadb_new_password: 111
+    mariadb_new_database: test
+
+  tasks:
+    - name: CentOS | Update
+      yum: name=* state=latest
+      when: ansible_os_family == "RedHat"
+
+    - name: MariaDB | Copy repo template
+      template:
+        src: templates/mariadb.repo.j2
+        dest: /etc/yum.repos.d/mariadb.repo
+
+    - name: MariaDB | Install server
+      yum:
+        state: latest
+        name: MariaDB-server
+
+    - name: MariaDB | Install client
+      yum:
+        state: latest
+        name: MariaDB-client
+
+    - name: MariaDB | Install MariaDB-Python
+      yum:
+        state: latest
+        name: MySQL-python
+
+    - name: Selinux | permissive
+      selinux:
+        state: permissive
+        policy: targeted
+
+    - name: MariaDB | Start
+      service:
+        name: mysql
+        state: started
+        enabled: yes
+
+    - name: Firewall | Open port 4567
+      firewalld:
+        port: 4567/tcp
+        permanent: true
+        state: enabled
+
+    - name: Firewall | Open port 3306
+      firewalld:
+        port: 3306/tcp
+        permanent: true
+        state: enabled
+
+    - name: Firewall | Open port 873
+      firewalld:
+        port: 873/tcp
+        permanent: true
+        state: enabled
+
+    - name: Firewall | Open port 4444
+      firewalld:
+        port: 4444/tcp
+        permanent: true
+        state: enabled
+
+
+    - name: Firewall | Open port 4567
+      firewalld:
+        port: 4567/tcp
+        permanent: true
+        state: enabled
+
+    - name: Firewall | Open port 4568
+      firewalld:
+        port: 4568/tcp
+        permanent: true
+        state: enabled
+
+    - name: Firewall | Open port 9200
+      firewalld:
+        port: 9200/tcp
+        permanent: true
+        state: enabled
+
+    - name: Firewall | Reload
+      command: "firewall-cmd --reload"
+
+    - name: MariaDB | Set root Password
+      mysql_user:
+        name: root
+        password: "{{ mariadb_root_password }}"
+        state: present
+        host: "{{ item }}"
+      with_items:
+        - localhost
+        - 127.0.0.1
+        - ::1
+      ignore_errors: yes
+
+    - name: MariaDB | Set root Password
+      mysql_user:
+        login_user: "{{ mariadb_new_username }}"
+        login_password: "{{ mariadb_new_password }}"
+        name: root
+        password: "{{ mariadb_root_password }}"
+        state: present
+        host: "{{ item }}"
+      with_items:
+        - localhost
+        - 127.0.0.1
+        - ::1
+      ignore_errors: yes
+
+    - name: MariaDB | Create new user
+      mysql_user:
+        name: "{{ mariadb_new_username }}"
+        password: "{{ mariadb_new_password }}"
+        host: "{{ item }}"
+        state: present
+        priv: '*.*:ALL'
+        login_user: root
+        login_password: "{{ mariadb_root_password }}"
+      with_items:
+        - '%'
+        - localhost
+        - 127.0.0.1
+        - ::1
+      ignore_errors: yes
+
+    - name: MariaDB | Remove all anonymous user accounts
+      mysql_user:
+        name: ''
+        host_all: yes
+        state: absent
+        login_user: root
+        login_password: "{{ mariadb_root_password }}"
+      ignore_errors: yes
+
+    - name: MariaDB | Remove test database
+      mysql_db:
+        name: test
+        state: absent
+        login_user: root
+        login_password: "{{ mariadb_root_password }}"
+      ignore_errors: yes
+
+    - name: MariaDB | Disallow root login remotely
+      mysql_user:
+        name: root
+        host: '%'
+        state: absent
+        login_user: root
+        login_password: "{{ mariadb_root_password }}"
+      ignore_errors: yes
+
+#    - name: MariaDB | Reload privilege tables
+#      command: 'mysql -u {{ mariadb_new_username }} -p {{ mariadb_new_password }} "FLUSH PRIVILEGES"'
+
+    - name: MariaDB | Stop
+      service:
+        name: mysql
+        state: stopped
+
+    - name: MariaDB | Copy SERVER file
+      template:
+        src: templates/server.cnf.j2
+        dest: /etc/my.cnf.d/server.cnf
+
+- hosts: MariaDBMain
+  tasks:
+    - name: MariaDB | Make this node Main
+      command: "sed -i 's/^safe_to_bootstrap: 0/safe_to_bootstrap: 1/g' /var/lib/mysql/grastate.dat"
+
+    - name: MariaDB | Start cluster on 1-st node
+      command: "galera_new_cluster"
+
+- hosts: MariaDBAls
+  tasks:
+    - name: MariaDB | Start cluster on als nodes
+      service:
+        name: mysql
+        state: started

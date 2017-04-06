@@ -1,0 +1,32 @@
+---
+#autor: Radchenko Vitalii (vitaliy.michailovich@gmail.com)
+- hosts: HAProxy
+
+  vars:
+    mysql_1: 192.168.0.3
+    mysql_2: 192.168.0.4
+    mysql_3: 192.168.0.5
+
+  tasks:
+    - name: CentOS | Update
+      yum: name=* state=latest
+      when: ansible_os_family == "RedHat"
+
+    - name: HAProxy | Install server
+      yum:
+        state: latest
+        name: haproxy
+
+    - name: HAProxy | Copy config file
+      template:
+        src: templates/haproxy.cfg.j2
+        dest: /etc/haproxy/haproxy.cfg
+
+    - name: HAProxy | Start
+      service:
+        name: haproxy
+        state: started
+        enabled: yes
+
+    - name: net.ipv4.ip_nonlocal_bind=1
+      command: "grep -q 'net.ipv4.ip_nonlocal_bind = 1' /usr/lib/sysctl.d/50-default.conf || echo 'net.ipv4.ip_nonlocal_bind = 1' >> /usr/lib/sysctl.d/50-default.conf"

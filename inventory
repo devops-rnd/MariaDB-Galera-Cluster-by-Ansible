@@ -1,0 +1,17 @@
+[MariaDB]
+192.168.0.3	node_name="MySQL-1"
+192.168.0.4	node_name="MySQL-2"
+192.168.0.5	node_name="MySQL-3"
+
+[MariaDB:vars]
+all_nodes="192.168.0.3,192.168.0.4,192.168.0.5"
+
+[MariaDBMain]
+192.168.0.3
+
+[MariaDBAls]
+192.168.0.4
+192.168.0.5
+
+[HAProxy]
+192.168.0.254
